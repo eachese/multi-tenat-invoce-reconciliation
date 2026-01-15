@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.db.models import MatchStatus
 
@@ -19,8 +19,11 @@ class MatchCandidateRead(BaseModel):
     reasoning: str | None = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+    @field_serializer("created_at")
+    def _serialize_created_at(self, value: datetime) -> str:
+        return _isoformat_z(value)
 
 
 class ReconciliationResponse(BaseModel):
@@ -41,3 +44,20 @@ class AIExplanationResponse(BaseModel):
 
     explanation: str
     confidence: str | None = None
+
+    @field_validator("explanation", "confidence")
+    @classmethod
+    def _strip_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("must not be blank")
+        return stripped
+
+
+def _isoformat_z(value: datetime) -> str:
+    iso = value.isoformat()
+    if iso.endswith("+00:00"):
+        return iso[:-6] + "Z"
+    return iso

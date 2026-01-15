@@ -78,13 +78,15 @@ class BankTransactionService:
                 transactions=[self._serialize_entity(entity) for entity in created_entities],
             )
 
+            serialized_response = response.model_dump(mode="json")
+
             record = IdempotencyKey(
                 tenant_id=self.tenant.tenant_id,
                 endpoint=self.IDEMPOTENCY_ENDPOINT,
                 key=idempotency_key,
                 payload_hash=payload_hash,
                 response_status=200,
-                response_body=response.model_dump(),
+                response_body=serialized_response,
             )
             self.session.add(record)
             self.session.commit()

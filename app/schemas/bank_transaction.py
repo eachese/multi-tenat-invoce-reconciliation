@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, PositiveFloat
+from pydantic import BaseModel, Field, PositiveFloat, field_serializer
 
 
 class BankTransactionRead(BaseModel):
@@ -17,6 +17,10 @@ class BankTransactionRead(BaseModel):
     currency: str
     description: str | None
     created_at: datetime
+
+    @field_serializer("posted_at", "created_at")
+    def _serialize_datetime(self, value: datetime) -> str:
+        return value.isoformat()
 
     class Config:
         from_attributes = True

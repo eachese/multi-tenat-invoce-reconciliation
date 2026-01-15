@@ -23,12 +23,13 @@ class MatchRepository(TenantScopedRepository[MatchCandidate]):
         return self.session.scalars(statement).all()
 
     def clear_proposed(self, tenant: TenantContext) -> None:
-        statement = (
-            delete(self.model)
-            .where(self.model.tenant_id == tenant.tenant_id)
-            .where(self.model.status == MatchStatus.PROPOSED)
+        statement: Select[tuple[MatchCandidate]] = (
+            self._base_query()
+            .where(self.model.tenant_id == tenant.tenant_id)  # type: ignore[attr-defined]
+            .where(self.model.status == MatchStatus.PROPOSED)  # type: ignore[attr-defined]
         )
-        self.session.execute(statement)
+        for candidate in self.session.scalars(statement).all():
+            self.session.delete(candidate)
         self.session.flush()
 
     def reject_other_matches(self, tenant: TenantContext, invoice_id: str, exclude_match_id: str) -> None:
@@ -85,6 +86,8 @@ class MatchRepository(TenantScopedRepository[MatchCandidate]):
         statement: Select[tuple[MatchCandidate]] = (
             self._base_query().where(self.model.tenant_id == tenant.tenant_id)  # type: ignore[attr-defined]
         )
-        if status is not None:
+        if status is None:
+            statement = statement.where(self.model.status != MatchStatus.REJECTED)  # type: ignore[attr-defined]
+        else:
             statement = statement.where(self.model.status == status)  # type: ignore[attr-defined]
         return self.session.scalars(statement).all()

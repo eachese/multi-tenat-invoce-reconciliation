@@ -25,6 +25,9 @@ def _run_migrations() -> None:
         command.upgrade(config, "head")
     except Exception:
         create_database_schema()
+        return
+
+    create_database_schema()
 
 
 def _ensure_sqlite_directory(settings: Settings) -> None:

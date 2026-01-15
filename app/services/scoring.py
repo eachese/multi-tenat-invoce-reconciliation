@@ -126,7 +126,10 @@ def score_match(invoice: Invoice, transaction: BankTransaction) -> MatchScore:
     components.append(_vendor_component(vendor_name, transaction.description))
 
     total = sum(component.contribution for component in components)
-    total = round(min(total, 1.0), 4)
+    if amount_diff > 1.0:
+        total = 0.0
+    else:
+        total = round(min(total, 1.0), 4)
     return MatchScore(total=total, components=components)
 
 

@@ -8,11 +8,7 @@ from app.api.dependencies import (
     get_reconciliation_service,
 )
 from app.api.errors import map_service_error
-from app.schemas.match import (
-    AIExplanationResponse,
-    MatchConfirmationResponse,
-    ReconciliationResponse,
-)
+from app.schemas.match import AIExplanationResponse, MatchConfirmationResponse, ReconciliationResponse
 from app.services.explanation_service import ExplanationService
 from app.services.exceptions import ServiceError
 from app.services.reconciliation_service import ReconciliationService
@@ -47,13 +43,22 @@ def confirm_match(
 @router.get("/reconcile/explain", response_model=AIExplanationResponse)
 def explain_match(
     tenant_id: str,
-    invoice_id: str = Query(..., description="Invoice identifier"),
-    bank_transaction_id: str = Query(..., description="Bank transaction identifier"),
+    match_id: str | None = Query(default=None, description="Match identifier"),
+    invoice_id: str | None = Query(default=None, description="Invoice identifier"),
+    bank_transaction_id: str | None = Query(default=None, description="Bank transaction identifier"),
     service: ExplanationService = Depends(get_explanation_service),
 ) -> AIExplanationResponse:
-    """Return AI/fallback explanation for an invoice/transaction pair."""
+    """Return AI/fallback explanation for a match or an explicit invoice/transaction pair."""
 
     try:
-        return service.explain_pair(invoice_id, bank_transaction_id)
+        if match_id is not None:
+            return service.explain_match(match_id)
+        if invoice_id is not None and bank_transaction_id is not None:
+            return service.explain_pair(invoice_id, bank_transaction_id)
     except ServiceError as exc:
         raise map_service_error(exc) from exc
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Provide match_id or both invoice_id and bank_transaction_id",
+    )

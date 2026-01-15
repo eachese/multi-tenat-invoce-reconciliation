@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -17,20 +17,19 @@ class Settings(BaseSettings):
     """Central application configuration."""
 
     app_name: str = "Flow RMS Invoice API"
-    environment: str = Field(default="development", alias="ENVIRONMENT")
+    environment: str = Field(default="development")
     database_url: str = Field(
         default="sqlite:///./data/dev.db",
         description="SQLAlchemy database URL",
-        alias="DATABASE_URL",
     )
-    ai_api_key: str | None = Field(default=None, alias="AI_API_KEY")
-    ai_model: str = Field(default="gpt-4o-mini", alias="AI_MODEL")
+    ai_api_key: str | None = Field(default=None)
+    ai_model: str = Field(default="gpt-4o-mini")
 
-    class Config:
-        env_file = ENV_FILE
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        populate_by_name = True
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        populate_by_name=True,
+        env_ignore_empty=True,
+    )
 
 
 @lru_cache

@@ -1,8 +1,9 @@
 """SQLAlchemy Declarative base and common mixins."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
+from sqlalchemy import DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlalchemy.sql import func
 
@@ -19,6 +20,7 @@ class TimestampMixin:
     """Mixin adding creation timestamp."""
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
-        server_default=func.now(),
+        default=lambda: datetime.now(timezone.utc),
     )
